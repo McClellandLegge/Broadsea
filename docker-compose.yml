@@ -7,10 +7,15 @@ volumes:
     name: rstudio-home-data
   rstudio-tmp-data:
     name: rstudio-tmp-data
+  ldap_data:
+    name: ldap_data
+  sldap_data:
+    name: sldap_data
 
 services:
   
   traefik:
+    profiles: [ "default", "content" ]
     image: docker.io/library/traefik:v2.9.4@sha256:4c388f477f5b7aa48420694d90db0ecb96b4ecede60b9b7589c87858abf87b60
     container_name: traefik
     restart: unless-stopped
@@ -158,3 +163,31 @@ services:
       - ./ares_data:/usr/share/nginx/html/ares/data:ro
     labels:
       - "traefik.enable=true"
+
+  openldap:
+    profiles: [ "default", "ldap" ]
+    image: osixia/openldap:1.1.8
+    container_name: ohdsi-openldap
+    command: [ "--copy-service", "--loglevel", "debug" ] 
+    ports:
+      - '1389:389' # map to a non-priviledged port
+      - '1636:636' # map to a non-priviledged port
+    # volumes:
+      # - ldap_data:/var/lib/ldap 
+      # - sldap_data:/etc/ldap/slapd.d
+      # - ./ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
+      # - ./ldif/acumenus.ldif:/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
+
+  ldapadmin:
+    profiles: [ "default", "ldap" ]
+    image: osixia/phpldapadmin:0.9.0
+    container_name: ldapadmin
+    ports:
+      - 6443:443
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "openldap"
+      # LDAP_URL: "ldap://openldap:1389"
+      # BASE_DN: "dc=example,dc=org"
+      # BIND_DN: "${BIND_DN:-cn=admin,ou=users,dc=example,dc=org}"
+      # BIND_PASSWORD: "${BIND_PASSWORD:-admin}"
+      # restart: unless-stopped
