@@ -7,6 +7,8 @@ volumes:
     name: rstudio-home-data
   rstudio-tmp-data:
     name: rstudio-tmp-data
+  openldap-data:
+    name: openldap-data
 
 services:
   
@@ -59,14 +61,14 @@ services:
   # WebAPI and Atlas services based on the standard Docker Hub images -------------
   ohdsi-webapi-from-image:
     profiles: [ "default", "webapi-from-image" ]
-    image: docker.io/ohdsi/webapi:latest
+    image: docker.io/ohdsi/webapi:2.12.1
     extends: 
       file: "ohdsi-webapi.yml"
       service: ohdsi-webapi
 
   ohdsi-atlas-from-image:
     profiles: [ "default", "atlas-from-image" ]
-    image: docker.io/ohdsi/atlas:latest
+    image: docker.io/ohdsi/atlas:2.12.1
     extends: 
       file: "ohdsi-atlas.yml"
       service: ohdsi-atlas
@@ -193,4 +195,18 @@ services:
     volumes:
       - ./phoebe:/tmp
     entrypoint: ["sh", "/tmp/load_phoebe.sh" ]
-    
+
+  openldap:
+    profiles: [ "default", "ldap" ]
+    image: docker.io/bitnami/openldap:2.6
+    container_name: ohdsi-openldap
+    ports:
+      - '1389:1389'
+      - '1636:1636'
+    environment:
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=adminpassword
+      - LDAP_USERS=sudoshi
+      - LDAP_PASSWORDS=sudoshi
+    # volumes:
+    #   - 'openldap-data:/bitnami/openldap'
